@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+    <title>Contact List</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="css/main.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-formhelpers.min.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-tagsinput.css"></link>
+</head>
+<body id="contactList" ng-app="app"  ng-controller="AppController">
+<div class="container" style="margin-top:50px;" ng-init="getAllContacts()">
+    <div class="row panel panel-default">
+        <div class="panel-heading clearfix">
+            <h2 class="panel-title pull-left text-uppercase" style="padding-top: 7.5px;"><span class="glyphicon glyphicon-th-list"></span> Contact List </h2>
+            <div class="btn-group pull-right">
+                <label type="button" class="btn btn-default" data-toggle="modal" data-target=".addContact"><span class="glyphicon glyphicon-plus"></span><span> - Add contact</span> </label>
+                <label type="button" class="btn btn-default" data-toggle="modal" data-target=".importContact"><span class="glyphicon glyphicon-import"></span><span> - Import file</span> </label>
+                <label type="button" class="btn btn-default" ng-click="exportContacts()"><span class="glyphicon glyphicon-export"></span><span> - Export file</span> </label>
+                <label type="button" class="btn btn-default" ng-click="deleteAllContact()"><span class="glyphicon glyphicon-ban-circle"></span><span> - Delete all contacts</span> </label>
+            </div>
+        </div>
+
+        <div class="container-fluid">
+            <div style="margin-top:20px;">
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-addon"><i class="glyphicon glyphicon-search"></i></div>
+                        <input type="text" class="form-control" placeholder="Search for name or lastname or phone" ng-model="search">
+                    </div>      
+                </div>
+                <div class="viewport" id="viewport" buffered-scroll="increaseLimit();" ng-init="limit = 50;">
+                    <table class="table table-striped table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>
+                                    <a href="#" ng-click="sortType = 'name'; sortReverse = !sortReverse">
+                                        Name 
+                                        <span ng-show="sortType == 'name' && !sortReverse" class="glyphicon glyphicon-menu-down"></span>
+                                        <span ng-show="sortType == 'name' && sortReverse" class="glyphicon glyphicon-menu-up"></span>
+                                    </a>
+                                </th>
+                                <th>Phones</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="obj in contactList| orderBy:sortType:sortReverse | filter:search | limitTo:limit">
+                                <td>{{$index + 1}}</td>
+                                <td>{{obj.name + " " + obj.lastName}}</td>
+                                <td>{{obj.phones.toString()}}</td>
+                                <td class="text-center">
+                                    <label type="button" class="btn btn-link" ng-click="editContact(obj)" data-toggle="modal" data-target=".editContact"><span class="glyphicon glyphicon-pencil"></span><span> Edit </span> </label>
+                                    <label type="button" class="btn btn-link" ng-click="deleteContact(obj)"><span class="glyphicon glyphicon-trash"></span><span> Delete </span> </label>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <label class="center-block text-center text-muted text-uppercase" ng-show="contactList.length === 0">
+                        NOT FOUND CONTACTS.
+                    </label>
+                </div>
+                <p class="h5 lead" ng-hide="contactList.length == 0"> Total Contacts : {{ contactList.length}}</p>
+                <br>
+            </div> 
+        </div>
+    </div>
+</div>
+
+<!--ADD CONTACT MODAL-->
+<div class="modal fade addContact" tabindex="-1" role="dialog" aria-labelledby="addContact" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="newSingleAddContact = {}"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Add Contact</h4>
+            </div>
+            <div class="modal-body col-md-12">
+                <form>
+                    <div class="form-group col-md-6">
+                        <label for="name" class="control-label">Name :</label>
+                        <input type="text" class="form-control" id="name" ng-model="newSingleAddContact.name">
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="lastName" class="control-label">Lastname :</label>
+                        <input type="text" class="form-control" id="lastName" ng-model="newSingleAddContact.lastName">
+                    </div>
+                    <div class="form-group col-md-12">
+                        <label for="phones" class="control-label">Phone: </label>
+                        <input type="text" class="form-control bfh-phone" data-format="+90 ddd ddddddd" ng-model="newSingleAddContact.phones">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="newSingleAddContact = {}"> Close </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="addContact(newSingleAddContact)"> Save Contact</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--EDIT CONTACT MODAL-->
+<div class="modal fade editContact" tabindex="-1" role="dialog" aria-labelledby="editContact" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Edit Contact</h4>
+            </div>
+            <div class="modal-body col-md-12">
+                <form>
+                    <div class="form-group col-xs-12 col-md-6">
+                        <label for="name" class="control-label">Name :</label>
+                        <input type="text" class="form-control" id="name" ng-model="editContactObj.name">
+                    </div>
+                    <div class="form-group col-xs-12 col-md-6">
+                        <label for="lastName" class="control-label">Lastname :</label>
+                        <input type="text" class="form-control" id="lastName" ng-model="editContactObj.lastName">
+                    </div>
+                    <div class="form-group col-xs-12 col-md-12">
+                        <label for="phone" class="control-label">Phone: </label>
+                        <div class="input-group">
+                            <input type="text" id="phone" class="form-control bfh-phone" data-format="+90 ddd ddddddd" ng-model="singleAddPhone">
+                                <span class="input-group-btn">
+                                    <label class="btn btn-default" type="button" ng-click="addNewPhone(singleAddPhone)">Add Phone!</label>
+                                </span>
+                        </div>
+                        <hr>
+                        <div class="col-xs-12">
+                            <label class="center-block">Contact's Phones:</label>
+                        </div>
+                        <div class="form-inline col-xs-6" ng-repeat="phone in editContactObj.phones">
+                            <div class="form-group"> 
+                                <p class="form-control-static btn btn-lg btn-link" ng-click="editPhone(phone)"><span class="glyphicon glyphicon-phone"></span> {{phone}} <span class="text-muted">(edit)</span> </p> 
+                            </div>
+                            <div class="form-group">
+                                <button clasS="btn btn-default" ng-click="removePhone(phone)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"> Close </button>
+                <button type="button" class="btn btn-primary" ng-disabled="editContactObj.phones.length < 1" ng-click="editContactSave()"> Update Contact</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--IMPORT CONTACT MODAL-->
+<div class="modal fade importContact" tabindex="-1" role="dialog" aria-labelledby="importContact" id="importContact" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close" ng-click="resetFile()"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="exampleModalLabel">Import File</h4>
+            </div>
+            <div class="modal-body">
+                <div class="">
+                    <div class="input-group">
+                        <label class="input-group-btn">
+                            <span class="btn btn-primary">
+                                Browse&hellip; <input id="getFile" type="file" style="display: none;" accept=".csv,.xml">
+                            </span>
+                        </label>
+                        <input id="getFileName" type="text" class="form-control" readonly>
+                    </div>
+                    <span class="help-block">
+                        {{dirtyContactList.length}} contact(s) found. 
+                    </span>
+                    <span class="help-block">
+                        {{sameContactCount}} duplicated contact(s) found and deleted.
+                    </span>
+                    <span class="help-block">
+                        {{mergeContactCount}} contact(s) were found matching each other..
+                    </span>
+                    <span class="help-block">
+                        {{importAddPhoneContactList.length}} contact(s) need update. 
+                    </span>
+                    <span class="help-block">
+                        {{importCleanContactList.length}} contact(s) ready to be saved. 
+                    </span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal" ng-click="resetFile()"> Close </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal" ng-disabled="(importCleanContactList.length + importAddPhoneContactList.length) == 0" ng-click="importSave(importCleanContactList);" >Save Contacts </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/angular.min.js"></script>
+<script src="js/angular-route.min.js"></script>
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/bootstrap-formhelpers.min.js"></script>
+<script src="js/bootstrap-tagsinput.min.js"></script>
+<script src="js/xml2json.js"></script>
+<script src="js/underscore-min.js"></script>
+<script src="js/lodash.min.js"></script>
+<script src="js/vanilla.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
